@@ -1,20 +1,19 @@
 #/bin/bash
 
-
-CLUSTER1=${CTX_CLUSTER1}
-CLUSTER2=${CTX_CLUSTER2}
-
-kubectl config use-context $CLUSTER1
+kubectl config use-context $CTX_CLUSTER1
 (cd istio ; ./deploy-istio-aws.sh)
 
-kubectl config use-context $CLUSTER2
+kubectl config use-context $CTX_CLUSTER2
 (cd istio ; ./deploy-istio-google.sh)
 
 
 # note, update the below ips with  pod ips
-# 1. k -n kube-system get pod -owide --context="${CLUSTER1}" | grep api
-# 1. k -n kube-system get pod -owide --context="${CLUSTER2}" | grep api
+# 1. k -n kube-system get pod -owide --context="${CTX_CLUSTER1}" | grep api
+# 1. k -n kube-system get pod -owide --context="${CTX_CLUSTER2}" | grep api
 
-istioctl x create-remote-secret --context="${CLUSTER1}" --name=aws-cluster --server=https://172.18.0.3:6443 | kubectl apply -f - --context="${CLUSTER2}"
+#APISERVER_IP_AWS=$(kubectl -n kube-system get pod -owide --context="${CTX_CLUSTER1}" -o=jsonpath='{.items[?(@.metadata.labels.component=="kube-apiserver")].status.podIP}')
+#APISERVER_IP_GOOGLE=$(kubectl -n kube-system get pod -owide --context="${CTX_CLUSTER1}" -o=jsonpath='{.items[?(@.metadata.labels.component=="kube-apiserver")].status.podIP}')
 
-istioctl x create-remote-secret --context="${CLUSTER2}" --name=google-cluster --server=https://172.18.0.5:6443 | kubectl apply -f - --context="${CLUSTER1}"
+istioctl x create-remote-secret --context="${CTX_CLUSTER1}" --name=aws-cluster --server=https://aws-cluster-control-plane:6443 | kubectl apply -f - --context="${CTX_CLUSTER2}"
+
+istioctl x create-remote-secret --context="${CTX_CLUSTER2}" --name=google-cluster --server=https://google-cluster-control-plane:6443 | kubectl apply -f - --context="${CTX_CLUSTER1}"

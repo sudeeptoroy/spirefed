@@ -11,13 +11,6 @@ kind create cluster --config=kind/kind-google.yaml
 export CTX_CLUSTER1=kind-aws-cluster
 export CTX_CLUSTER2=kind-google-cluster
 
-echo"
-CTX_CLUSTER1=kind-aws-cluster
-CTX_CLUSTER2=kind-google-cluster
-CLUSTER1=$CTX_CLUSTER1
-CLUSTER2=$CTX_CLUSTER2
-"
-
 # install LB for the east west gw
 kubectl apply -f kind/metallb.yaml --context=$CTX_CLUSTER1
 kubectl apply -f kind/metallb.yaml --context=$CTX_CLUSTER2
@@ -27,3 +20,8 @@ docker network inspect -f '{{.IPAM.Config}}' kind
 
 kubectl apply -f kind/metallb-cm-aws.yaml --context $CTX_CLUSTER1
 kubectl apply -f kind/metallb-cm-google.yaml --context $CTX_CLUSTER2
+
+echo "
+CTX_CLUSTER1=kind-aws-cluster
+CTX_CLUSTER2=kind-google-cluster
+"

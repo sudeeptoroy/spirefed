@@ -28,7 +28,7 @@ data:
         }
         federates_with "aws.com" {
           # NOTE:  update the url
-          bundle_endpoint_url = "https://172.18.0.2:30007"
+          bundle_endpoint_url = "https://aws-cluster-worker:30007"
           bundle_endpoint_profile "https_spiffe" {
             endpoint_spiffe_id = "spiffe://aws.com/spire/server"
           }

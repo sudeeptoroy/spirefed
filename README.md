@@ -6,8 +6,8 @@ Follow the script
 
 
 ## To bringup
-1. ./bring-up.sh
-### To verify
-1. ./verify.sh 
-### To destroy
-1. ./kind/destroy.sh
+./bring-up.sh
+## To verify
+./verify.sh 
+## To destroy
+./kind/destroy.sh

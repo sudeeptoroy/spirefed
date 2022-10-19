@@ -1,5 +1,8 @@
 #/bin/bash
 
+export CTX_CLUSTER1=kind-aws-cluster
+export CTX_CLUSTER2=kind-google-cluster
+
 kubectl create --context="${CTX_CLUSTER1}" namespace sample
 kubectl create --context="${CTX_CLUSTER2}" namespace sample
 

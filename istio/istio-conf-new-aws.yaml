@@ -6,6 +6,8 @@ spec:
   profile: default
   meshConfig:
     trustDomain: aws.com
+    trustDomainAliases:
+    - google.com
   values:
     global:
       meshID: devup-mesh
@@ -37,6 +39,8 @@ spec:
           # Check that istio-agent's namespace and service account match the ones in the JWT token presented in the connection
           - name: PILOT_ENABLE_XDS_IDENTITY_CHECK
             value: "true"
+            #          - name: PILOT_SKIP_VALIDATE_TRUST_DOMAIN
+            #            value: "true"
     ingressGateways:
       - name: istio-ingressgateway
         enabled: true

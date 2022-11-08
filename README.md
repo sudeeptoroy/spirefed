@@ -11,3 +11,6 @@ Follow the script
 ./verify.sh 
 ## To destroy
 ./kind/destroy.sh
+
+
+## Note: With the latest I have added aliases and hence the setup will work. In case you want to repoduce the issue kindly remove the "trustDomainAliases" from the istio configs. files are: istio/istio-conf-new-aws.yaml and istio/istio-conf-new-google.yaml

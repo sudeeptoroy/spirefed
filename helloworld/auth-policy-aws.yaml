@@ -1,0 +1,31 @@
+# test: 
+# (sleep@aws) -> ( helloworld@aws ) - do not allow
+# (sleep@aws) -> ( helloworld@google ) - do not allow
+#
+apiVersion: "security.istio.io/v1beta1"
+kind: "AuthorizationPolicy"
+metadata:
+  name: "allow-sleep-google"
+spec:
+  selector:
+    matchLabels:
+      app: helloworld
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["google.com/ns/sleep/sa/sleep"]
+---
+apiVersion: "security.istio.io/v1beta1"
+kind: "AuthorizationPolicy"
+metadata:
+  name: "deny-sleep-aws"
+spec:
+  selector:
+    matchLabels:
+      app: helloworld
+  action: DENY
+  rules:
+  - from:
+    - source:
+        principals: ["aws.com/ns/sleep/sa/sleep"]

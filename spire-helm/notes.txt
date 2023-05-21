@@ -1,0 +1,11 @@
+##### spire installation  #####
+
+* https://github.com/spiffe/helm-charts
+* helm repo add spiffe https://spiffe.github.io/helm-charts/
+* helm repo update
+
+* kubectl config use-context ${CTX_CLUSTER1}
+* kubectl create ns istio-system
+* helm install spire-aws charts/helm-charts/charts/spire/ --namespace spire --create-namespace
+
+aws_bundle=$(kubectl exec --stdin spire-aws-server-0 -c spire-server -n spire  -- /opt/spire/bin/spire-server bundle show -format spiffe -socketPath /run/spire/sockets/server.sock)

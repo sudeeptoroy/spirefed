@@ -5,8 +5,6 @@ global:
 
 spire-server:
   socketPath: "/tmp/spire-server/private/api.sock"
-  service:
-    type: "NodePort"
   controllerManager:
     enabled: true
     validatingWebhookConfiguration:

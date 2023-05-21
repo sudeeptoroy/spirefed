@@ -21,10 +21,30 @@ spec:
     - name: federation
       port: {{ .bundleEndpoint.port }}
       targetPort: federation
-      # sudi
-      nodePort: 30007
       protocol: TCP
     {{- end }}
     {{- end }}
+  selector:
+    {{- include "spire-server.selectorLabels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sudi-nodeport-hardcode
+  namespace: {{ include "spire-server.namespace" . }}
+  {{- with .Values.service.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  labels:
+    {{- include "spire-server.labels" . | nindent 4 }}
+spec:
+  type: NodePort
+  ports:
+    - name: federation
+      port: 8443
+      targetPort: federation
+      nodePort: 30007
+      protocol: TCP
   selector:
     {{- include "spire-server.selectorLabels" . | nindent 4 }}

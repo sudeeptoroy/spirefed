@@ -23,12 +23,13 @@ spec:
             - name: istio-proxy
               volumeMounts:
               - name: workload-socket
-                mountPath: /run/secrets/workload-spiffe-uds
+                mountPath: "/run/secrets/workload-spiffe-uds"
                 readOnly: true
             volumes:
               - name: workload-socket
                 csi:
                   driver: "csi.spiffe.io"
+                  readOnly: true
   components:
     pilot:
       k8s:
@@ -59,6 +60,7 @@ spec:
                     name: workload-socket
                     csi:
                       driver: "csi.spiffe.io"
+                      readOnly: true
                 - path: spec.template.spec.containers.[name:istio-proxy].volumeMounts.[name:workload-socket]
                   value:
                     name: workload-socket
@@ -83,6 +85,7 @@ spec:
                     name: workload-socket
                     csi:
                       driver: "csi.spiffe.io"
+                      readOnly: true
                 - path: spec.template.spec.containers.[name:istio-proxy].volumeMounts.[name:workload-socket]
                   value:
                     name: workload-socket

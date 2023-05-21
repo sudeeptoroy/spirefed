@@ -1,0 +1,247 @@
+"name": "envoy.filters.network.http_connection_manager",
+           "typed_config": {
+            "@type": "type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager",
+            "stat_prefix": "inbound_0.0.0.0_5000",
+            "route_config": {
+             "name": "inbound|5000||",
+             "virtual_hosts": [
+              {
+               "name": "inbound|http|5000",
+               "domains": [
+                "*"
+               ],
+               "routes": [
+                {
+                 "match": {
+                  "prefix": "/"
+                 },
+                 "route": {
+                  "cluster": "inbound|5000||",
+                  "timeout": "0s",
+                  "max_stream_duration": {
+                   "max_stream_duration": "0s",
+                   "grpc_timeout_header_max": "0s"
+                  }
+                 },
+                 "decorator": {
+                  "operation": "helloworld.helloworld.svc.cluster.local:5000/*"
+                 },
+                 "name": "default"
+                }
+               ]
+              }
+             ],
+             "validate_clusters": false
+            },
+            "http_filters": [
+             {
+              "name": "envoy.filters.http.rbac",
+              "typed_config": {
+               "@type": "type.googleapis.com/envoy.extensions.filters.http.rbac.v3.RBAC",
+               "rules": {
+                "action": "DENY",
+                "policies": {
+                 "ns[helloworld]-policy[deny-sleep-google]-rule[0]": {
+                  "permissions": [
+                   {
+                    "and_rules": {
+                     "rules": [
+                      {
+                       "any": true
+                      }
+                     ]
+                    }
+                   }
+                  ],
+                  "principals": [
+                   {
+                    "and_ids": {
+                     "ids": [
+                      {
+                       "or_ids": {
+                        "ids": [
+                         {
+                          "authenticated": {
+                           "principal_name": {
+                            "exact": "spiffe://google.com/ns/sleep/sa/sleep"
+                           }
+                          }
+                         },
+                         {
+                          "authenticated": {
+                           "principal_name": {
+                            "exact": "spiffe://aws.com/ns/sleep/sa/sleep"
+                           }
+                          }
+                         }
+                        ]
+                       }
+                      }
+                     ]
+                    }
+                   }
+                  ]
+                 }
+                }
+               },
+               "shadow_rules_stat_prefix": "istio_dry_run_allow_"
+              }
+             },
+             {
+              "name": "envoy.filters.http.rbac",
+              "typed_config": {
+               "@type": "type.googleapis.com/envoy.extensions.filters.http.rbac.v3.RBAC",
+               "rules": {
+                "policies": {
+                 "ns[helloworld]-policy[allow-sleep-aws]-rule[0]": {
+                  "permissions": [
+                   {
+                    "and_rules": {
+                     "rules": [
+                      {
+                       "any": true
+                      }
+                     ]
+                    }
+                   }
+                  ],
+                  "principals": [
+                   {
+                    "and_ids": {
+                     "ids": [
+                      {
+                       "or_ids": {
+                        "ids": [
+                         {
+                          "authenticated": {
+                           "principal_name": {
+                            "exact": "spiffe://google.com/ns/sleep/sa/sleep"
+                           }
+                          }
+                         },
+                         {
+                          "authenticated": {
+                           "principal_name": {
+                            "exact": "spiffe://aws.com/ns/sleep/sa/sleep"
+                           }
+                          }
+                         }
+                        ]
+                       }
+                      }
+                     ]
+                    }
+                   }
+                  ]
+                 }
+                }
+               },
+               "shadow_rules_stat_prefix": "istio_dry_run_allow_"
+              }
+             },
+
+
+
+
+
+2022-11-20T10:37:00.367200Z	trace	envoy http	[C13] parsed 75 bytes
+2022-11-20T10:37:00.367203Z	trace	envoy main	clearing deferred deletion list (size=3)
+2022-11-20T10:37:00.367212Z	trace	envoy connection	[C1340] socket event: 2
+2022-11-20T10:37:00.367240Z	trace	envoy connection	[C1340] write ready
+2022-11-20T10:37:00.367301Z	trace	envoy connection	[C1340] write returns: 143
+2022-11-20T10:37:00.367308Z	debug	envoy connection	[C1340] write flush complete
+2022-11-20T10:37:00.367310Z	debug	envoy connection	[C1340] closing socket: 1
+2022-11-20T10:37:00.367334Z	trace	envoy connection	[C1340] raising connection event 1
+2022-11-20T10:37:00.367339Z	trace	envoy conn_handler	[C1340] connection on event 1
+2022-11-20T10:37:00.367341Z	debug	envoy conn_handler	[C1340] adding to cleanup list
+2022-11-20T10:37:00.367343Z	trace	envoy main	item added to deferred deletion list (size=1)
+2022-11-20T10:37:00.367345Z	trace	envoy main	item added to deferred deletion list (size=2)
+2022-11-20T10:37:00.367348Z	trace	envoy main	clearing deferred deletion list (size=2)
+2022-11-20T10:37:01.518432Z	debug	envoy filter	original_dst: new connection accepted
+2022-11-20T10:37:01.518483Z	trace	envoy filter	original_dst: set destination to 10.241.1.11:5000
+2022-11-20T10:37:01.518487Z	debug	envoy filter	tls inspector: new connection accepted
+2022-11-20T10:37:01.518492Z	trace	envoy filter	tls inspector: recv: 1335
+2022-11-20T10:37:01.518506Z	trace	envoy filter	tls:onALPN(), ALPN: istio-http/1.1,istio,http/1.1
+2022-11-20T10:37:01.518513Z	debug	envoy filter	tls:onServerName(), requestedServerName: outbound_.5000_._.helloworld.helloworld.svc.cluster.local
+2022-11-20T10:37:01.518591Z	trace	envoy misc	enableTimer called on 0x55734a5bc500 for 3600000ms, min is 3600000ms
+2022-11-20T10:37:01.518625Z	debug	envoy conn_handler	[C1341] new connection from 10.241.1.6:41154
+2022-11-20T10:37:01.518641Z	trace	envoy connection	[C1341] socket event: 3
+2022-11-20T10:37:01.518683Z	trace	envoy connection	[C1341] write ready
+2022-11-20T10:37:01.519170Z	trace	envoy connection	[C1341] ssl error occurred while read: WANT_READ
+2022-11-20T10:37:01.519200Z	trace	envoy connection	[C1341] read ready. dispatch_buffered_data=0
+2022-11-20T10:37:01.519206Z	trace	envoy connection	[C1341] ssl error occurred while read: WANT_READ
+2022-11-20T10:37:01.523435Z	trace	envoy connection	[C1341] socket event: 3
+2022-11-20T10:37:01.523496Z	trace	envoy connection	[C1341] write ready
+2022-11-20T10:37:01.523863Z	trace	envoy connection	[C1341] raising connection event 2
+2022-11-20T10:37:01.523897Z	trace	envoy conn_handler	[C1341] connection on event 2
+2022-11-20T10:37:01.523917Z	trace	envoy connection	[C1341] read ready. dispatch_buffered_data=0
+2022-11-20T10:37:01.523948Z	trace	envoy connection	[C1341] ssl read returns: 1241
+2022-11-20T10:37:01.523952Z	trace	envoy connection	[C1341] ssl read returns: -1
+2022-11-20T10:37:01.523956Z	trace	envoy connection	[C1341] ssl error occurred while read: WANT_READ
+2022-11-20T10:37:01.523959Z	trace	envoy connection	[C1341] ssl read 1241 bytes
+2022-11-20T10:37:01.523964Z	trace	envoy filter	Alpn Protocol Not Found. Expected istio-peer-exchange, Got http/1.1
+2022-11-20T10:37:01.523999Z	trace	envoy http	[C1341] parsing 1241 bytes
+2022-11-20T10:37:01.524027Z	trace	envoy http	[C1341] message begin
+2022-11-20T10:37:01.524034Z	debug	envoy http	[C1341] new stream
+2022-11-20T10:37:01.524048Z	trace	envoy http	[C1341] completed header: key=host value=helloworld.helloworld:5000
+2022-11-20T10:37:01.524054Z	trace	envoy http	[C1341] completed header: key=user-agent value=curl/7.86.0-DEV
+2022-11-20T10:37:01.524058Z	trace	envoy http	[C1341] completed header: key=accept value=*/*
+2022-11-20T10:37:01.524062Z	trace	envoy http	[C1341] completed header: key=x-forwarded-proto value=http
+2022-11-20T10:37:01.524067Z	trace	envoy http	[C1341] completed header: key=x-request-id value=80d38126-b331-475f-b3bc-bc660439b368
+2022-11-20T10:37:01.524095Z	trace	envoy http	[C1341] completed header: key=x-envoy-decorator-operation value=helloworld.helloworld.svc.cluster.local:5000/*
+2022-11-20T10:37:01.524104Z	trace	envoy http	[C1341] completed header: key=x-envoy-peer-metadata value=ChkKDkFQUF9DT05UQUlORVJTEgcaBXNsZWVwChsKCkNMVVNURVJfSUQSDRoLYXdzLWNsdXN0ZXIKHQoMSU5TVEFOQ0VfSVBTEg0aCzEwLjI0MC4xLjExChkKDUlTVElPX1ZFUlNJT04SCBoGMS4xNC40Cu0BCgZMQUJFTFMS4gEq3wEKDgoDYXBwEgcaBXNsZWVwCh4KEXBvZC10ZW1wbGF0ZS1oYXNoEgkaBzk1ZDg2OTYKJAoZc2VjdXJpdHkuaXN0aW8uaW8vdGxzTW9kZRIHGgVpc3RpbwoqCh9zZXJ2aWNlLmlzdGlvLmlvL2Nhbm9uaWNhbC1uYW1lEgcaBXNsZWVwCi8KI3NlcnZpY2UuaXN0aW8uaW8vY2Fub25pY2FsLXJldmlzaW9uEggaBmxhdGVzdAoqChl0b3BvbG9neS5pc3Rpby5pby9uZXR3b3JrEg0aC2F3cy1uZXR3b3JrChcKB01FU0hfSUQSDBoKZGV2dXAtbWVzaAodCgROQU1FEhUaE3NsZWVwLTk1ZDg2OTYtY2Jya2MKFAoJTkFNRVNQQUNFEgcaBXNsZWVwCkcKBU9XTkVSEj4aPGt1YmVybmV0ZXM6Ly9hcGlzL2FwcHMvdjEvbmFtZXNwYWNlcy9zbGVlcC9kZXBsb3ltZW50cy9zbGVlcAoXChFQTEFURk9STV9NRVRBREFUQRICKgAKGAoNV09SS0xPQURfTkFNRRIHGgVzbGVlcA==
+2022-11-20T10:37:01.524140Z	trace	envoy http	[C1341] completed header: key=x-envoy-peer-metadata-id value=sidecar~10.240.1.11~sleep-95d8696-cbrkc.sleep~sleep.svc.cluster.local
+2022-11-20T10:37:01.524149Z	trace	envoy http	[C1341] completed header: key=x-envoy-attempt-count value=1
+2022-11-20T10:37:01.524154Z	trace	envoy http	[C1341] completed header: key=x-b3-traceid value=fd386ae1afd774172813de6bb2b149c8
+2022-11-20T10:37:01.524156Z	trace	envoy http	[C1341] completed header: key=x-b3-spanid value=2813de6bb2b149c8
+2022-11-20T10:37:01.524159Z	trace	envoy http	[C1341] onHeadersCompleteBase
+2022-11-20T10:37:01.524160Z	trace	envoy http	[C1341] completed header: key=x-b3-sampled value=0
+2022-11-20T10:37:01.524164Z	trace	envoy http	[C1341] Server: onHeadersComplete size=12
+2022-11-20T10:37:01.524169Z	trace	envoy http	[C1341] message complete
+2022-11-20T10:37:01.524182Z	debug	envoy http	[C1341][S4511436489601524622] request headers complete (end_stream=true):
+':authority', 'helloworld.helloworld:5000'
+':path', '/hello'
+':method', 'GET'
+'user-agent', 'curl/7.86.0-DEV'
+'accept', '*/*'
+'x-forwarded-proto', 'http'
+'x-request-id', '80d38126-b331-475f-b3bc-bc660439b368'
+'x-envoy-decorator-operation', 'helloworld.helloworld.svc.cluster.local:5000/*'
+'x-envoy-peer-metadata', 'ChkKDkFQUF9DT05UQUlORVJTEgcaBXNsZWVwChsKCkNMVVNURVJfSUQSDRoLYXdzLWNsdXN0ZXIKHQoMSU5TVEFOQ0VfSVBTEg0aCzEwLjI0MC4xLjExChkKDUlTVElPX1ZFUlNJT04SCBoGMS4xNC40Cu0BCgZMQUJFTFMS4gEq3wEKDgoDYXBwEgcaBXNsZWVwCh4KEXBvZC10ZW1wbGF0ZS1oYXNoEgkaBzk1ZDg2OTYKJAoZc2VjdXJpdHkuaXN0aW8uaW8vdGxzTW9kZRIHGgVpc3RpbwoqCh9zZXJ2aWNlLmlzdGlvLmlvL2Nhbm9uaWNhbC1uYW1lEgcaBXNsZWVwCi8KI3NlcnZpY2UuaXN0aW8uaW8vY2Fub25pY2FsLXJldmlzaW9uEggaBmxhdGVzdAoqChl0b3BvbG9neS5pc3Rpby5pby9uZXR3b3JrEg0aC2F3cy1uZXR3b3JrChcKB01FU0hfSUQSDBoKZGV2dXAtbWVzaAodCgROQU1FEhUaE3NsZWVwLTk1ZDg2OTYtY2Jya2MKFAoJTkFNRVNQQUNFEgcaBXNsZWVwCkcKBU9XTkVSEj4aPGt1YmVybmV0ZXM6Ly9hcGlzL2FwcHMvdjEvbmFtZXNwYWNlcy9zbGVlcC9kZXBsb3ltZW50cy9zbGVlcAoXChFQTEFURk9STV9NRVRBREFUQRICKgAKGAoNV09SS0xPQURfTkFNRRIHGgVzbGVlcA=='
+'x-envoy-peer-metadata-id', 'sidecar~10.240.1.11~sleep-95d8696-cbrkc.sleep~sleep.svc.cluster.local'
+'x-envoy-attempt-count', '1'
+'x-b3-traceid', 'fd386ae1afd774172813de6bb2b149c8'
+'x-b3-spanid', '2813de6bb2b149c8'
+'x-b3-sampled', '0'
+
+2022-11-20T10:37:01.524186Z	debug	envoy http	[C1341][S4511436489601524622] request end stream
+2022-11-20T10:37:01.524202Z	debug	envoy connection	[C1341] current connecting state: false
+2022-11-20T10:37:01.524328Z	debug	envoy rbac	checking request: requestedServerName: outbound_.5000_._.helloworld.helloworld.svc.cluster.local, sourceIP: 10.241.1.6:41154, directRemoteIP: 10.241.1.6:41154, remoteIP: 10.241.1.6:41154,localAddress: 10.241.1.11:5000, ssl: uriSanPeerCertificate: spiffe://aws.com/ns/sleep/sa/sleep, dnsSanPeerCertificate: sleep-95d8696-cbrkc,sleep.sleep.svc, subjectPeerCertificate: CN=sleep-95d8696-cbrkc,O=SPIRE,C=US, headers: ':authority', 'helloworld.helloworld:5000'
+':path', '/hello'
+':method', 'GET'
+':scheme', 'http'
+'user-agent', 'curl/7.86.0-DEV'
+'accept', '*/*'
+'x-forwarded-proto', 'http'
+'x-request-id', '80d38126-b331-475f-b3bc-bc660439b368'
+'x-envoy-peer-metadata', 'ChkKDkFQUF9DT05UQUlORVJTEgcaBXNsZWVwChsKCkNMVVNURVJfSUQSDRoLYXdzLWNsdXN0ZXIKHQoMSU5TVEFOQ0VfSVBTEg0aCzEwLjI0MC4xLjExChkKDUlTVElPX1ZFUlNJT04SCBoGMS4xNC40Cu0BCgZMQUJFTFMS4gEq3wEKDgoDYXBwEgcaBXNsZWVwCh4KEXBvZC10ZW1wbGF0ZS1oYXNoEgkaBzk1ZDg2OTYKJAoZc2VjdXJpdHkuaXN0aW8uaW8vdGxzTW9kZRIHGgVpc3RpbwoqCh9zZXJ2aWNlLmlzdGlvLmlvL2Nhbm9uaWNhbC1uYW1lEgcaBXNsZWVwCi8KI3NlcnZpY2UuaXN0aW8uaW8vY2Fub25pY2FsLXJldmlzaW9uEggaBmxhdGVzdAoqChl0b3BvbG9neS5pc3Rpby5pby9uZXR3b3JrEg0aC2F3cy1uZXR3b3JrChcKB01FU0hfSUQSDBoKZGV2dXAtbWVzaAodCgROQU1FEhUaE3NsZWVwLTk1ZDg2OTYtY2Jya2MKFAoJTkFNRVNQQUNFEgcaBXNsZWVwCkcKBU9XTkVSEj4aPGt1YmVybmV0ZXM6Ly9hcGlzL2FwcHMvdjEvbmFtZXNwYWNlcy9zbGVlcC9kZXBsb3ltZW50cy9zbGVlcAoXChFQTEFURk9STV9NRVRBREFUQRICKgAKGAoNV09SS0xPQURfTkFNRRIHGgVzbGVlcA=='
+'x-envoy-peer-metadata-id', 'sidecar~10.240.1.11~sleep-95d8696-cbrkc.sleep~sleep.svc.cluster.local'
+'x-envoy-attempt-count', '1'
+'x-b3-traceid', 'fd386ae1afd774172813de6bb2b149c8'
+'x-b3-spanid', '2813de6bb2b149c8'
+'x-b3-sampled', '0'
+'x-forwarded-client-cert', 'By=spiffe://google.com/ns/helloworld/sa/helloworld;Hash=3524959a8a8e27467e3e19a716bdebba6ded442c895f77c7cbc8f8c033d58183;Subject="CN=sleep-95d8696-cbrkc,O=SPIRE,C=US";URI=spiffe://aws.com/ns/sleep/sa/sleep;DNS=sleep-95d8696-cbrkc;DNS=sleep.sleep.svc'
+, dynamicMetadata:
+2022-11-20T10:37:01.524382Z	debug	envoy rbac	enforced denied, matched policy ns[helloworld]-policy[deny-sleep-google]-rule[0]
+2022-11-20T10:37:01.524389Z	debug	envoy http	[C1341][S4511436489601524622] Sending local reply with details rbac_access_denied_matched_policy[ns[helloworld]-policy[deny-sleep-google]-rule[0]]
+2022-11-20T10:37:01.524402Z	trace	envoy http	[C1341][S4511436489601524622] encode headers called: filter=0x55734a658540 status=0
+2022-11-20T10:37:01.524405Z	trace	envoy http	[C1341][S4511436489601524622] encode headers called: filter=0x55734a658af0 status=0
+2022-11-20T10:37:01.524406Z	trace	envoy http	[C1341][S4511436489601524622] encode headers called: filter=0x55734a33b110 status=0
+2022-11-20T10:37:01.524408Z	trace	envoy http	[C1341][S4511436489601524622] encode headers called: filter=0x55734a58a310 status=0
+2022-11-20T10:37:01.524419Z	debug	envoy http	[C1341][S4511436489601524622] encoding headers via codec (end_stream=false):
+':status', '403'
+'content-length', '19'
+'content-type', 'text/plain'
+'date', 'Sun, 20 Nov 2022 10:37:01 GMT'
+'server', 'istio-envoy'
+

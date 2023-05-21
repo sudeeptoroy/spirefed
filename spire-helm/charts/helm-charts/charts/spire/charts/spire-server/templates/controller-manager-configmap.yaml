@@ -32,5 +32,5 @@ data:
       {{- with .Values.controllerManager.ignoreNamespaces }}
       {{- toYaml . | nindent 6 }}
       {{- end }}
-    spireServerSocketPath: "/run/spire/sockets/server.sock"
+    spireServerSocketPath: "/tmp/spire-server/private/api.sock"
 {{- end }}

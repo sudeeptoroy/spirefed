@@ -1,0 +1,1224 @@
+---
+# Source: spire/charts/spiffe-csi-driver/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spire-aws-spiffe-csi-driver
+  namespace: spire
+  labels:
+    helm.sh/chart: spiffe-csi-driver-0.1.0
+    app.kubernetes.io/name: spiffe-csi-driver
+    app.kubernetes.io/instance: spire-aws
+    app.kubernetes.io/version: "0.2.3"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: spire/charts/spire-agent/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spire-aws-agent
+  namespace: spire
+  labels:
+    helm.sh/chart: spire-agent-0.1.0
+    app.kubernetes.io/name: agent
+    app.kubernetes.io/instance: spire-aws
+    app.kubernetes.io/version: "1.6.3"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: spire/charts/spire-server/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spire-aws-server
+  namespace: spire
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire-aws
+    app.kubernetes.io/version: "1.6.3"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: spire/charts/spire-agent/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-aws-agent
+  namespace: spire
+data:
+  agent.conf: |
+    {
+      "agent": {
+        "data_dir": "/run/spire",
+        "log_level": "info",
+        "server_address": "spire-aws-server.spire",
+        "server_port": "8081",
+        "socket_path": "/run/secrets/workload-spiffe-uds/socket",
+        "trust_bundle_path": "/run/spire/bundle/bundle.crt",
+        "trust_domain": "aws.com"
+      },
+      "health_checks": {
+        "bind_address": "0.0.0.0",
+        "bind_port": "9980",
+        "listener_enabled": true,
+        "live_path": "/live",
+        "ready_path": "/ready"
+      },
+      "plugins": {
+        "KeyManager": [
+          {
+            "memory": {
+              "plugin_data": null
+            }
+          }
+        ],
+        "NodeAttestor": [
+          {
+            "k8s_psat": {
+              "plugin_data": {
+                "cluster": "aws-cluster"
+              }
+            }
+          }
+        ],
+        "WorkloadAttestor": [
+          {
+            "k8s": {
+              "plugin_data": {
+                "skip_kubelet_verification": true
+              }
+            }
+          }
+        ]
+      }
+    }
+---
+# Source: spire/charts/spire-server/templates/bundle-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-bundle
+  namespace: spire
+---
+# Source: spire/charts/spire-server/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-aws-server
+  namespace: spire
+data:
+  server.conf: |
+    {
+      "health_checks": {
+        "bind_address": "0.0.0.0",
+        "bind_port": "8080",
+        "listener_enabled": true,
+        "live_path": "/live",
+        "ready_path": "/ready"
+      },
+      "plugins": {
+        "DataStore": [
+          {
+            "sql": {
+              "plugin_data": {
+                "connection_string": "/run/spire/data/datastore.sqlite3",
+                "database_type": "sqlite3"
+              }
+            }
+          }
+        ],
+        "KeyManager": [
+          {
+            "disk": {
+              "plugin_data": {
+                "keys_path": "/run/spire/data/keys.json"
+              }
+            }
+          }
+        ],
+        "NodeAttestor": [
+          {
+            "k8s_psat": {
+              "plugin_data": {
+                "clusters": {
+                  "aws-cluster": {
+                    "service_account_allow_list": [
+                      "spire:spire-aws-agent"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "Notifier": [
+          {
+            "k8sbundle": {
+              "plugin_data": {
+                "config_map": "spire-bundle",
+                "namespace": "spire"
+              }
+            }
+          }
+        ]
+      },
+      "server": {
+        "bind_address": "0.0.0.0",
+        "bind_port": "8081",
+        "ca_key_type": "rsa-2048",
+        "ca_subject": [
+          {
+            "common_name": "example.org",
+            "country": [
+              "NL"
+            ],
+            "organization": [
+              "Example"
+            ]
+          }
+        ],
+        "ca_ttl": "24h",
+        "data_dir": "/run/spire/data",
+        "default_jwt_svid_ttl": "1h",
+        "default_x509_svid_ttl": "4h",
+        "federation": {
+          "bundle_endpoint": [
+            {
+              "address": "0.0.0.0",
+              "port": 8443
+            }
+          ],
+          "federates_with": [
+            {
+              "google.com": {
+                "bundle_endpoint_profile": [
+                  {
+                    "https_spiffe": {
+                      "endpoint_spiffe_id": "spiffe://google.com/spire/server"
+                    }
+                  }
+                ],
+                "bundle_endpoint_url": "https://google-cluster-worker:30007"
+              }
+            }
+          ]
+        },
+        "jwt_issuer": "oidc-discovery.example.org",
+        "log_level": "info",
+        "socket_path": "/tmp/spire-server/private/api.sock",
+        "trust_domain": "aws.com"
+      }
+    }
+---
+# Source: spire/charts/spire-server/templates/controller-manager-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-aws-controller-manager
+  namespace: spire
+data:
+  controller-manager-config.yaml: |
+    apiVersion: spire.spiffe.io/v1alpha1
+    kind: ControllerManagerConfig
+    metadata:
+      name: spire-aws-controller-manager
+      namespace: spire
+      labels:
+        helm.sh/chart: spire-server-0.1.0
+        app.kubernetes.io/name: server
+        app.kubernetes.io/instance: spire-aws
+        app.kubernetes.io/version: "1.6.3"
+        app.kubernetes.io/managed-by: Helm
+    metrics:
+      bindAddress: 0.0.0.0:8082
+    health:
+      healthProbeBindAddress: 0.0.0.0:8083
+    leaderElection:
+      leaderElect: true
+      resourceName: bee917c5.spiffe.io
+      resourceNamespace: spire
+    validatingWebhookConfigurationName: spire-aws-controller-manager-webhook
+    clusterName: aws-cluster
+    trustDomain: aws.com
+    ignoreNamespaces:
+      - kube-system
+      - kube-public
+      - local-path-storage
+    spireServerSocketPath: "/tmp/spire-server/private/api.sock"
+---
+# Source: spire/charts/spire-agent/templates/roles.yaml
+# Required cluster role to allow spire-agent to query k8s API server
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-aws-agent
+rules:
+  - apiGroups: [""]
+    resources:
+      - pods
+      - nodes
+      - nodes/proxy
+    verbs: ["get"]
+---
+# Source: spire/charts/spire-server/templates/controller-manager-roles.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: spire-aws-controller-manager
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingwebhookconfigurations"]
+    verbs: ["get", "list", "patch", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["spire.spiffe.io"]
+    resources: ["clusterfederatedtrustdomains"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["spire.spiffe.io"]
+    resources: ["clusterfederatedtrustdomains/finalizers"]
+    verbs: ["update"]
+  - apiGroups: ["spire.spiffe.io"]
+    resources: ["clusterfederatedtrustdomains/status"]
+    verbs: ["get", "patch", "update"]
+  - apiGroups: ["spire.spiffe.io"]
+    resources: ["clusterspiffeids"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["spire.spiffe.io"]
+    resources: ["clusterspiffeids/finalizers"]
+    verbs: ["update"]
+  - apiGroups: ["spire.spiffe.io"]
+    resources: ["clusterspiffeids/status"]
+    verbs: ["get", "patch", "update"]
+---
+# Source: spire/charts/spire-server/templates/roles.yaml
+# ClusterRole to allow spire-server node attestor to query Token Review API
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-spire-aws-server
+rules:
+  - apiGroups: [authentication.k8s.io]
+    resources: [tokenreviews]
+    verbs:
+      - get
+      - watch
+      - list
+      - create
+  - apiGroups: [""]
+    resources: [nodes, pods]
+    verbs:
+      - get
+      - list
+---
+# Source: spire/charts/spire-agent/templates/roles.yaml
+# Binds above cluster role to spire-agent service account
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-aws-agent
+subjects:
+  - kind: ServiceAccount
+    name: spire-aws-agent
+    namespace: spire
+roleRef:
+  kind: ClusterRole
+  name: spire-aws-agent
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: spire/charts/spire-server/templates/controller-manager-roles.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: spire-aws-controller-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: spire-aws-controller-manager
+subjects:
+- kind: ServiceAccount
+  name: spire-aws-server
+  namespace: spire
+---
+# Source: spire/charts/spire-server/templates/roles.yaml
+# Binds above cluster role to spire-server service account
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-spire-aws-server
+subjects:
+  - kind: ServiceAccount
+    name: spire-aws-server
+    namespace: spire
+roleRef:
+  kind: ClusterRole
+  name: spire-spire-aws-server
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: spire/charts/spire-server/templates/controller-manager-roles.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: spire-aws-controller-manager-leader-election
+  namespace: spire
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+# Source: spire/charts/spire-server/templates/roles.yaml
+# Role to be able to push certificate bundles to a configmap
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-aws-server-bundle
+  namespace: spire
+rules:
+  - apiGroups: [""]
+    resources: [configmaps]
+    resourceNames: [spire-bundle]
+    verbs:
+      - get
+      - patch
+---
+# Source: spire/charts/spire-server/templates/controller-manager-roles.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: spire-aws-controller-manager-leader-election
+  namespace: spire
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: spire-aws-controller-manager-leader-election
+subjects:
+- kind: ServiceAccount
+  name: spire-aws-server
+  namespace: spire
+---
+# Source: spire/charts/spire-server/templates/roles.yaml
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-aws-server-bundle
+  namespace: spire
+subjects:
+  - kind: ServiceAccount
+    name: spire-aws-server
+    namespace: spire
+roleRef:
+  kind: Role
+  name: spire-aws-server-bundle
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: spire/charts/spire-server/templates/controller-manager-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: spire-aws-controller-manager-webhook
+  namespace: spire
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire-aws
+    app.kubernetes.io/version: "1.6.3"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - name: https
+      port: 443
+      targetPort: https
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire-aws
+---
+# Source: spire/charts/spire-server/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: spire-aws-server
+  namespace: spire
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire-aws
+    app.kubernetes.io/version: "1.6.3"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: NodePort
+  ports:
+    - name: grpc
+      port: 8081
+      targetPort: grpc
+      protocol: TCP
+    - name: federation
+      port: 8443
+      targetPort: federation
+      # sudi
+      nodePort: 30007
+      protocol: TCP
+  selector:
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire-aws
+---
+# Source: spire/charts/spiffe-csi-driver/templates/daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: spire-aws-spiffe-csi-driver
+  namespace: spire
+  labels:
+    helm.sh/chart: spiffe-csi-driver-0.1.0
+    app.kubernetes.io/name: spiffe-csi-driver
+    app.kubernetes.io/instance: spire-aws
+    app.kubernetes.io/version: "0.2.3"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: spiffe-csi-driver
+      app.kubernetes.io/instance: spire-aws
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: spiffe-csi-driver
+        app.kubernetes.io/instance: spire-aws
+    spec:
+      serviceAccountName: spire-aws-spiffe-csi-driver
+      containers:
+        # This is the container which runs the SPIFFE CSI driver.
+        - name: spiffe-csi-driver
+          image: ghcr.io/spiffe/spiffe-csi-driver:0.2.3
+          imagePullPolicy: IfNotPresent
+          args: [
+            "-workload-api-socket-dir", "/spire-agent-socket",
+            "-plugin-name", "csi.spiffe.io",
+            "-csi-socket-path", "/spiffe-csi/csi.sock",
+          ]
+          env:
+            # The CSI driver needs a unique node ID. The node name can be
+            # used for this purpose.
+            - name: MY_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            # The volume containing the SPIRE agent socket. The SPIFFE CSI
+            # driver will mount this directory into containers.
+            - mountPath: /spire-agent-socket
+              name: spire-agent-socket-dir
+              readOnly: true
+            # The volume that will contain the CSI driver socket shared
+            # with the kubelet and the driver registrar.
+            - mountPath: /spiffe-csi
+              name: spiffe-csi-socket-dir
+            # The volume containing mount points for containers.
+            - mountPath: /var/lib/kubelet/pods
+              mountPropagation: Bidirectional
+              name: mountpoint-dir
+          securityContext:
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - all
+            privileged: true
+          resources:
+            {}
+        # This container runs the CSI Node Driver Registrar which takes care
+        # of all the little details required to register a CSI driver with
+        # the kubelet.
+        - name: node-driver-registrar
+          image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.8.0
+          imagePullPolicy: IfNotPresent
+          args: [
+            "-csi-address", "/spiffe-csi/csi.sock",
+            "-kubelet-registration-path", "/var/lib/kubelet/plugins/csi.spiffe.io/csi.sock",
+            "-health-port", "9809"
+          ]
+          volumeMounts:
+            # The registrar needs access to the SPIFFE CSI driver socket
+            - mountPath: /spiffe-csi
+              name: spiffe-csi-socket-dir
+            # The registrar needs access to the Kubelet plugin registration
+            # directory
+            - name: kubelet-plugin-registration-dir
+              mountPath: /registration
+          ports:
+            - containerPort: 9809
+              name: healthz
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+          resources:
+            {}
+      volumes:
+        - name: spire-agent-socket-dir
+          hostPath:
+            path: /run/spire/agent-sockets
+            type: DirectoryOrCreate
+        # This volume is where the socket for kubelet->driver communication lives
+        - name: spiffe-csi-socket-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/csi.spiffe.io
+            type: DirectoryOrCreate
+        # This volume is where the SPIFFE CSI driver mounts volumes
+        - name: mountpoint-dir
+          hostPath:
+            path: /var/lib/kubelet/pods
+            type: Directory
+        # This volume is where the node-driver-registrar registers the plugin
+        # with kubelet
+        - name: kubelet-plugin-registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry
+            type: Directory
+---
+# Source: spire/charts/spire-agent/templates/daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: spire-aws-agent
+  namespace: spire
+  labels:
+    helm.sh/chart: spire-agent-0.1.0
+    app.kubernetes.io/name: agent
+    app.kubernetes.io/instance: spire-aws
+    app.kubernetes.io/version: "1.6.3"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: agent
+      app.kubernetes.io/instance: spire-aws
+  template:
+    metadata:
+      annotations:
+        checksum/config: bac949e56e13db0fce754e76588bbe1637e4299b838d43559b0ec1ed6d810061
+      labels:
+        app.kubernetes.io/name: agent
+        app.kubernetes.io/instance: spire-aws
+    spec:
+      hostPID: true
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      serviceAccountName: spire-aws-agent
+      securityContext:
+        {}
+      initContainers:
+        - name: init
+          # This is a small image with wait-for-it, choose whatever image
+          # you prefer that waits for a service to be up. This image is built
+          # from https://github.com/vishnubob/wait-for-it
+          image: cgr.dev/chainguard/wait-for-it:latest-20230517
+          imagePullPolicy: IfNotPresent
+          args: ["-t", "30", "-h", "spire-aws-server.spire", "-p", "8081"]
+          resources:
+            {}
+      containers:
+        - name: spire-agent
+          image: ghcr.io/spiffe/spire-agent:1.6.3
+          imagePullPolicy: IfNotPresent
+          args: ["-config", "/run/spire/config/agent.conf"]
+          ports:
+            - containerPort: 9980
+              name: healthz
+          volumeMounts:
+            - name: spire-config
+              mountPath: /run/spire/config
+              readOnly: true
+            - name: spire-bundle
+              mountPath: /run/spire/bundle
+              readOnly: true
+            - name: spire-agent-socket-dir
+              mountPath: /run/secrets/workload-spiffe-uds
+              readOnly: false
+            - name: spire-token
+              mountPath: /var/run/secrets/tokens
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: healthz
+            initialDelaySeconds: 15
+            periodSeconds: 60
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: healthz
+            initialDelaySeconds: 15
+            periodSeconds: 60
+          resources:
+            {}
+      volumes:
+        - name: spire-config
+          configMap:
+            name: spire-aws-agent
+        - name: spire-bundle
+          configMap:
+            name: spire-bundle
+        - name: spire-token
+          projected:
+            sources:
+            - serviceAccountToken:
+                path: spire-agent
+                expirationSeconds: 7200
+                audience: spire-server
+        - name: spire-agent-socket-dir
+          hostPath:
+            path: /run/secrets/workload-spiffe-uds
+            type: DirectoryOrCreate
+---
+# Source: spire/charts/spire-server/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: spire-aws-server
+  namespace: spire
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire-aws
+    app.kubernetes.io/version: "1.6.3"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  serviceName: spire-aws-server
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: server
+      app.kubernetes.io/instance: spire-aws
+  template:
+    metadata:
+      annotations:
+        checksum/config: 56ca743df0d87e52603414e97453b3f9e1898ef981022774f92d5d1a2544a6d0
+        checksum/config2: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+        checksum/config3: 4d6a4792220b8bfe41c2fa36c872e70e9859b39ccfe2893806f73dce40494b0d
+        checksum/configTornjak: 01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b
+      labels:
+        app.kubernetes.io/name: server
+        app.kubernetes.io/instance: spire-aws
+    spec:
+      serviceAccountName: spire-aws-server
+      shareProcessNamespace: true
+      securityContext:
+        {}
+      containers:
+        - name: spire-server
+          securityContext:
+            {}
+          image: ghcr.io/spiffe/spire-server:1.6.3
+          imagePullPolicy: IfNotPresent
+          args:
+            - -expandEnv
+            - -config
+            - /run/spire/config/server.conf
+          env:
+          - name: PATH
+            value: "/opt/spire/bin:/bin"
+          ports:
+            - name: grpc
+              containerPort: 8081
+              protocol: TCP
+            - containerPort: 8080
+              name: healthz
+            - name: federation
+              containerPort: 8443
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /live
+              port: healthz
+            failureThreshold: 2
+            initialDelaySeconds: 15
+            periodSeconds: 60
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: healthz
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            {}
+          volumeMounts:
+            - name: spire-server-socket
+              mountPath: /tmp/spire-server/private
+              readOnly: false
+            - name: spire-config
+              mountPath: /run/spire/config
+              readOnly: true
+            - name: spire-data
+              mountPath: /run/spire/data
+              readOnly: false
+        - name: spire-controller-manager
+          securityContext:
+            {}
+          image: ghcr.io/spiffe/spire-controller-manager:0.2.2
+          imagePullPolicy: IfNotPresent
+          args:
+            - --config=controller-manager-config.yaml
+          ports:
+            - name: https
+              containerPort: 9443
+              protocol: TCP
+            - containerPort: 8083
+              name: healthz
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: healthz
+          resources:
+            {}
+          volumeMounts:
+            - name: spire-server-socket
+              mountPath: /tmp/spire-server/private
+              readOnly: true
+            - name: controller-manager-config
+              mountPath: /controller-manager-config.yaml
+              subPath: controller-manager-config.yaml
+              readOnly: true
+            - name: spire-controller-manager-tmp
+              mountPath: /tmp
+              readOnly: false
+      volumes:
+        - name: spire-config
+          configMap:
+            name: spire-aws-server
+        - name: spire-server-socket
+          emptyDir: {}
+        - name: spire-controller-manager-tmp
+          emptyDir: {}
+        - name: spire-data
+          emptyDir: {}
+        - name: controller-manager-config
+          configMap:
+            name: spire-aws-controller-manager
+  # volumeClaimTemplates:
+  #   - metadata:
+  #       name: spire-data
+  #     spec:
+  #       accessModes:
+  #         - ReadWriteOnce
+  #       resources:
+  #         requests:
+  #           storage: 1Gi
+  #
+---
+# Source: spire/charts/spiffe-csi-driver/templates/spiffe-csi-driver.yaml
+apiVersion: storage.k8s.io/v1
+kind: CSIDriver
+metadata:
+  name: "csi.spiffe.io"
+spec:
+  # Only ephemeral, inline volumes are supported. There is no need for a
+  # controller to provision and attach volumes.
+  attachRequired: false
+
+  # Request the pod information which the CSI driver uses to verify that an
+  # ephemeral mount was requested.
+  podInfoOnMount: true
+
+  # Don't change ownership on the contents of the mount since the Workload API
+  # Unix Domain Socket is typically open to all (i.e. 0777).
+  fsGroupPolicy: None
+
+  # Declare support for ephemeral volumes only.
+  volumeLifecycleModes:
+    - Ephemeral
+---
+# Source: spire/charts/spire-server/templates/controller-manager-cluster-ids.yaml
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: spire-aws-controller-manager-service-account-based
+  namespace: spire
+spec:
+  spiffeIDTemplate: "spiffe://{{ .TrustDomain }}/ns/{{ .PodMeta.Namespace }}/sa/{{ .PodSpec.ServiceAccountName }}"
+---
+# Source: spire/charts/spire-server/templates/controller-manager-webhook.yaml
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: spire-aws-controller-manager-webhook
+webhooks:
+  - admissionReviewVersions: ["v1"]
+    clientConfig:
+      service:
+        name: spire-aws-controller-manager-webhook
+        namespace: spire
+        path: /validate-spire-spiffe-io-v1alpha1-clusterfederatedtrustdomain
+    failurePolicy: Ignore # Actual value to be set by post install/upgrade hooks
+    name: vclusterfederatedtrustdomain.kb.io
+    rules:
+      - apiGroups: ["spire.spiffe.io"]
+        apiVersions: ["v1alpha1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["clusterfederatedtrustdomains"]
+    sideEffects: None
+  - admissionReviewVersions: ["v1"]
+    clientConfig:
+      service:
+        name: spire-aws-controller-manager-webhook
+        namespace: spire
+        path: /validate-spire-spiffe-io-v1alpha1-clusterspiffeid
+    failurePolicy: Ignore # Actual value to be set by post install/upgrade hooks
+    name: vclusterspiffeid.kb.io
+    rules:
+      - apiGroups: ["spire.spiffe.io"]
+        apiVersions: ["v1alpha1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["clusterspiffeids"]
+    sideEffects: None
+---
+# Source: spire/charts/spire-server/templates/post-install-hook.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spire-aws-server-post-install
+  namespace: spire
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire-aws
+    app.kubernetes.io/version: "1.6.3"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+---
+# Source: spire/charts/spire-server/templates/post-upgrade-hook.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spire-aws-server-post-upgrade
+  namespace: spire
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire-aws
+    app.kubernetes.io/version: "1.6.3"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+---
+# Source: spire/charts/spire-server/templates/pre-upgrade-hook.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: spire-aws-server-pre-upgrade
+  namespace: spire
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire-aws
+    app.kubernetes.io/version: "1.6.3"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+---
+# Source: spire/charts/spire-server/templates/post-install-hook.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: spire-aws-server-post-install
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+rules:
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingwebhookconfigurations"]
+    resourceNames: ["spire-aws-controller-manager-webhook"]
+    verbs: ["get", "patch"]
+---
+# Source: spire/charts/spire-server/templates/post-upgrade-hook.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: spire-aws-server-post-upgrade
+  annotations:
+    "helm.sh/hook": post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+rules:
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingwebhookconfigurations"]
+    resourceNames: ["spire-aws-controller-manager-webhook"]
+    verbs: ["get", "patch"]
+---
+# Source: spire/charts/spire-server/templates/pre-upgrade-hook.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: spire-aws-server-pre-upgrade
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+rules:
+  - apiGroups: ["admissionregistration.k8s.io"]
+    resources: ["validatingwebhookconfigurations"]
+    resourceNames: ["spire-aws-controller-manager-webhook"]
+    verbs: ["get", "patch"]
+---
+# Source: spire/charts/spire-server/templates/post-install-hook.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-aws-server-post-install
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+subjects:
+  - kind: ServiceAccount
+    name: spire-aws-server-post-install
+    namespace: spire
+roleRef:
+  kind: ClusterRole
+  name: spire-aws-server-post-install
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: spire/charts/spire-server/templates/post-upgrade-hook.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-aws-server-post-upgrade
+  annotations:
+    "helm.sh/hook": post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+subjects:
+  - kind: ServiceAccount
+    name: spire-aws-server-post-upgrade
+    namespace: spire
+roleRef:
+  kind: ClusterRole
+  name: spire-aws-server-post-upgrade
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: spire/charts/spire-server/templates/pre-upgrade-hook.yaml
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: spire-aws-server-pre-upgrade
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+subjects:
+  - kind: ServiceAccount
+    name: spire-aws-server-pre-upgrade
+    namespace: spire
+roleRef:
+  kind: ClusterRole
+  name: spire-aws-server-pre-upgrade
+  apiGroup: rbac.authorization.k8s.io
+---
+# Source: spire/charts/spire-server/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "spire-aws-server-test-connection"
+  namespace: spire
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire-aws
+    app.kubernetes.io/version: "1.6.3"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+spec:
+  securityContext:
+    {}
+  containers:
+    - name: curl
+      image: cgr.dev/chainguard/bash:latest
+      command: ['bash']
+      args:
+        - -c
+        - |
+          curl -f -s 'https://spire-aws-server:8081'
+          NOCA=$?
+          curl -k -f -s 'https://spire-aws-server:8081'
+          IGNORECA=$?
+          echo $NOCA $IGNORECA
+          if [ $NOCA -eq 60 -a $IGNORECA -eq 22 ]; then
+            # We were able to connect to the server but didn't recognize the ca (60) and the page not found (22) because we're not using grpc
+            exit 0
+          fi
+          exit 1
+      securityContext:
+        {}
+    - name: curl-federation-bundle-endpoint
+      image: cgr.dev/chainguard/bash:latest
+      command: ['curl']
+      args: ['-k', '-s', '-f', 'https://spire-aws-server.spire.svc.cluster.local:8443']
+      securityContext:
+        {}
+  restartPolicy: Never
+---
+# Source: spire/charts/spire-server/templates/post-install-hook.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: spire-aws-server-post-install
+  namespace: spire
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire-aws
+    app.kubernetes.io/version: "1.6.3"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+spec:
+  template:
+    metadata:
+      name: spire-aws-server-post-install
+    spec:
+      restartPolicy: Never
+      serviceAccountName: spire-aws-server-post-install
+      securityContext:
+        {}
+      containers:
+      - name: post-install-job
+        securityContext:
+          {}
+        image: docker.io/rancher/kubectl:v1.23.17
+        args:
+          - patch
+          - validatingwebhookconfiguration
+          - spire-aws-controller-manager-webhook
+          - --type=strategic
+          - -p
+          - |
+            {
+              "webhooks":[
+                {
+                  "name":"vclusterspiffeid.kb.io",
+                  "failurePolicy":"Fail"
+                },
+                {
+                  "name":"vclusterfederatedtrustdomain.kb.io",
+                  "failurePolicy":"Fail"
+                }
+              ]
+            }
+---
+# Source: spire/charts/spire-server/templates/post-upgrade-hook.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: spire-aws-server-post-upgrade
+  namespace: spire
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire-aws
+    app.kubernetes.io/version: "1.6.3"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+spec:
+  template:
+    metadata:
+      name: spire-aws-server-post-upgrade
+    spec:
+      restartPolicy: Never
+      serviceAccountName: spire-aws-server-post-upgrade 
+      securityContext:
+        {}
+      containers:
+      - name: post-upgrade-job
+        securityContext:
+          {}
+        image: docker.io/rancher/kubectl:v1.23.17
+        args:
+          - patch
+          - validatingwebhookconfiguration
+          - spire-aws-controller-manager-webhook
+          - --type=strategic
+          - -p
+          - |
+            {
+              "webhooks":[
+                {
+                  "name":"vclusterspiffeid.kb.io",
+                  "failurePolicy":"Fail"
+                },
+                {
+                  "name":"vclusterfederatedtrustdomain.kb.io",
+                  "failurePolicy":"Fail"
+                }
+              ]
+            }
+---
+# Source: spire/charts/spire-server/templates/pre-upgrade-hook.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: spire-aws-server-pre-upgrade
+  namespace: spire
+  labels:
+    helm.sh/chart: spire-server-0.1.0
+    app.kubernetes.io/name: server
+    app.kubernetes.io/instance: spire-aws
+    app.kubernetes.io/version: "1.6.3"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation, hook-succeeded, hook-failed
+spec:
+  template:
+    metadata:
+      name: spire-aws-server-pre-upgrade
+    spec:
+      restartPolicy: Never
+      serviceAccountName: spire-aws-server-pre-upgrade
+      securityContext:
+        {}
+      containers:
+      - name: post-install-job
+        securityContext:
+          {}
+        image: docker.io/rancher/kubectl:v1.23.17
+        args:
+          - patch
+          - validatingwebhookconfiguration
+          - spire-aws-controller-manager-webhook
+          - --type=strategic
+          - -p
+          - |
+            {
+              "webhooks":[
+                {
+                  "name":"vclusterspiffeid.kb.io",
+                  "failurePolicy":"Ignore"
+                },
+                {
+                  "name":"vclusterfederatedtrustdomain.kb.io",
+                  "failurePolicy":"Ignore"
+                }
+              ]
+            }

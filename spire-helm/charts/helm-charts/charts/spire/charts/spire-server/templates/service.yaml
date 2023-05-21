@@ -21,6 +21,8 @@ spec:
     - name: federation
       port: {{ .bundleEndpoint.port }}
       targetPort: federation
+      # sudi
+      nodePort: 30007
       protocol: TCP
     {{- end }}
     {{- end }}

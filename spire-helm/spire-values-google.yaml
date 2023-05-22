@@ -20,3 +20,6 @@ spire-server:
 
 spire-agent:
   socketPath: "/run/secrets/workload-spiffe-uds/socket"
+
+spiffe-csi-driver:
+  agentSocketPath: "/run/secrets/workload-spiffe-uds/socket"

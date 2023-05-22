@@ -1,0 +1,10 @@
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: google-sleep
+spec:
+  spiffeIDTemplate: "spiffe://google.com/ns/{{ .PodMeta.Namespace }}/sa/{{ .PodSpec.ServiceAccountName }}"
+  podSelector:
+    matchLabels:
+      app: "sleep"
+  federatesWith: ["aws.com"]

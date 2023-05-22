@@ -27,12 +27,6 @@ server:
   federation:
     bundle_endpoint:
       - {{ .bundleEndpoint | toYaml | nindent 8 }}
-    federates_with: 
-      - {{ .federatesWith | quote }}:
-          bundle_endpoint_url: {{ .bundleEndpointUrl | quote }}
-          bundle_endpoint_profile:
-            - {{ .bundleEndpointProfile | quote }}:
-                endpoint_spiffe_id: {{ .endpointSpiffeId | quote }}
   {{- end }}
   {{- end }}
 

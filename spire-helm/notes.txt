@@ -11,11 +11,31 @@
 aws_bundle=$(kubectl exec --stdin spire-aws-server-0 -c spire-server -n spire  -- /opt/spire/bin/spire-server bundle show -format spiffe -socketPath "/tmp/spire-server/private/api.sock")
 
 
-
-
 kubectl config use-context ${CTX_CLUSTER2}
 kubectl create ns istio-system
 helm install spire-google charts/helm-charts/charts/spire/ --namespace spire --create-namespace -f spire-values-google.yaml
+
+
+aws_b="$aws_bundle" \
+yq eval -n '{
+    "apiVersion": "spire.spiffe.io/v1alpha1",
+    "kind": "ClusterFederatedTrustDomain",
+    "metadata": {
+        "name": "aws"
+    },
+    "spec": {
+        "trustDomain": "aws.com",
+        "bundleEndpointURL": "https://aws-cluster-worker:30007",
+        "bundleEndpointProfile": {
+            "type": "https_spiffe",
+            "endpointSPIFFEID": "spiffe://aws.com/spire/server"
+        },
+        "trustDomainBundle": strenv(aws_b)
+    }
+}' > federation-google.yaml
+
+
+kubectl -n spire apply -f federation-google.yaml
 
 google_bundle=$(kubectl exec --stdin spire-google-server-0 -c spire-server -n spire  --  /opt/spire/bin/spire-server bundle show -format spiffe -socketPath "/tmp/spire-server/private/api.sock")
 
@@ -23,10 +43,31 @@ google_bundle=$(kubectl exec --stdin spire-google-server-0 -c spire-server -n sp
 
 kubectl exec --stdin spire-google-server-0 -c spire-server -n spire -- /opt/spire/bin/spire-server  bundle set -format spiffe -id spiffe://aws.com -socketPath /tmp/spire-server/private/api.sock <<< "$aws_bundle"
 
+kubectl exec --stdin spire-google-server-0 -c spire-server -n spire  --  /opt/spire/bin/spire-server entry show -socketPath "/tmp/spire-server/private/api.sock"
+
+
 ### move to cluster 1
 kubectl config use-context ${CTX_CLUSTER1}
 
 # Set domain.test bundle to example.org SPIRE bundle endpoint
 kubectl exec --stdin spire-aws-server-0 -c spire-server -n spire -- /opt/spire/bin/spire-server  bundle set -format spiffe -id spiffe://google.com -socketPath /tmp/spire-server/private/api.sock <<< "$google_bundle"
 
+google_b="$google_bundle" \
+yq eval -n '{
+    "apiVersion": "spire.spiffe.io/v1alpha1",
+    "kind": "ClusterFederatedTrustDomain",
+    "metadata": {
+        "name": "google"
+    },
+    "spec": {
+        "trustDomain": "google.com",
+        "bundleEndpointURL": "https://google-cluster-worker:30007",
+        "bundleEndpointProfile": {
+            "type": "https_spiffe",
+            "endpointSPIFFEID": "spiffe://google.com/spire/server"
+        },
+        "trustDomainBundle": strenv(google_b)
+    }
+}' > federation-aws.yaml
 
+kubectl -n spire apply -f federation-aws.yaml

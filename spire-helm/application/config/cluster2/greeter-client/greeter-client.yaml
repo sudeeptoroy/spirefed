@@ -21,11 +21,11 @@ spec:
         imagePullPolicy: Never
         volumeMounts:
         - name: spire-agent-socket
-          mountPath: /run/spire/sockets
+          mountPath: /run/secrets/workload-spiffe-uds
           readOnly: true
         env:
         - name: SPIFFE_ENDPOINT_SOCKET
-          value: unix:///run/spire/sockets/spire-agent.sock
+          value: unix:///run/secrets/workload-spiffe-uds/socket
         - name: GREETER_SERVER_ADDR
           valueFrom:
             configMapKeyRef:

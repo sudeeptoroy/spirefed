@@ -22,11 +22,11 @@ spec:
         args: ["--addr", ":8443"]
         volumeMounts:
         - name: spire-agent-socket
-          mountPath: /run/spire/sockets
+          mountPath: /run/secrets/workload-spiffe-uds
           readOnly: true
         env:
         - name: SPIFFE_ENDPOINT_SOCKET
-          value: unix:///run/spire/sockets/spire-agent.sock
+          value: unix:///run/secrets/workload-spiffe-uds/socket
       volumes:
       - name: spire-agent-socket
         csi:

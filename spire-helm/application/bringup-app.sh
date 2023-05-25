@@ -1,4 +1,9 @@
-cd spire-applciation
+#/bin/bash
+
+set -e
+
+CTX_CLUSTER1=kind-aws-cluster
+CTX_CLUSTER2=kind-google-cluster
 
 (cd greeter; make docker-build)
 
@@ -32,8 +37,11 @@ kubectl -n greeter-client apply -k config/cluster2/greeter-client
 
 kubectl config use-context ${CTX_CLUSTER1}
 kubectl -n greeter-server apply -f config/greeter-server-id.yaml
-kubectl delete  clusterspiffeid  spire-aws-controller-manager-service-account-based
+#kubectl delete  clusterspiffeid  spire-aws-controller-manager-service-account-based
 
 kubectl config use-context ${CTX_CLUSTER2}
 kubectl -n greeter-client apply -f config/greeter-client-id.yaml
-kubectl delete  clusterspiffeid  spire-google-controller-manager-service-account-based
+#kubectl delete  clusterspiffeid  spire-google-controller-manager-service-account-based
+
+echo "correct the client cm with correct ip -> $GREETER_IP_PORT"
+echo "kubectl -n greeter-client edit cm greeter-client-config"

@@ -1,5 +1,13 @@
+#helm repo add spiffe https://spiffe.github.io/helm-charts/
+#helm repo update
+CTX_CLUSTER1=kind-aws-cluster
+CTX_CLUSTER2=kind-google-cluster
+
 kubectl config use-context ${CTX_CLUSTER1}
-helm install spire-aws charts/spire/ --namespace spire --create-namespace -f spire-values-aws.yaml
+helm install spire-aws spiffe/spire --namespace spire --create-namespace -f spire-values-aws.yaml
+
+kubectl -n spire rollout status statefulset spire-aws-server
+kubectl -n spire rollout status daemonset spire-aws-agent
 
 kubectl -n spire apply -f nodePort-aws.yaml
 
@@ -7,7 +15,10 @@ aws_bundle=$(kubectl exec --stdin spire-aws-server-0 -c spire-server -n spire  -
 
 kubectl config use-context ${CTX_CLUSTER2}
 
-helm install spire-google charts/spire/ --namespace spire --create-namespace -f spire-values-google.yaml
+helm install spire-google spiffe/spire --namespace spire --create-namespace -f spire-values-google.yaml
+
+kubectl -n spire rollout status statefulset spire-google-server
+kubectl -n spire rollout status daemonset spire-google-agent
 
 kubectl -n spire apply -f nodePort-google.yaml
 

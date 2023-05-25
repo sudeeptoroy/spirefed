@@ -1,0 +1,14 @@
+global:
+  spire:
+    trustDomain: aws.com
+    clusterName: aws-cluster
+
+spire-server:
+  controllerManager:
+    enabled: true
+    validatingWebhookConfiguration:
+      upgradeHook:
+        image:
+          tag: "v1.23.17"
+  federation:
+    enabled: true

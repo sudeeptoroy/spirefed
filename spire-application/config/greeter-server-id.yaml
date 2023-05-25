@@ -1,0 +1,10 @@
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterSPIFFEID
+metadata:
+  name: greeter-server
+spec:
+  spiffeIDTemplate: "spiffe://aws.com/ns/{{ .PodMeta.Namespace }}/sa/{{ .PodSpec.ServiceAccountName }}"
+  podSelector:
+    matchLabels:
+      spire.spiffe.io/spiffeid: greeter-server
+  federatesWith: ["google.com"]

@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: greeter-client
+  labels:
+    app: greeter-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: greeter-client
+  template:
+    metadata:
+      labels:
+        app: greeter-client
+        spire.spiffe.io/spiffeid: greeter-client
+    spec:
+      containers:
+      - name: greeter-client
+        image: greeter-client:demo
+        imagePullPolicy: Never
+        volumeMounts:
+        - name: spire-agent-socket
+          mountPath: /spire-agent-socket
+          readOnly: true
+        env:
+        - name: SPIFFE_ENDPOINT_SOCKET
+          value: unix:///spire-agent-socket/agent.sock
+        - name: GREETER_SERVER_ADDR
+          valueFrom:
+            configMapKeyRef:
+              name: greeter-client-config
+              key: greeter-server-addr
+      volumes:
+      - name: spire-agent-socket
+        csi:
+          driver: "csi.spiffe.io"
+          readOnly: true

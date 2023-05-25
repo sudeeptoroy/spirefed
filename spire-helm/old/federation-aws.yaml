@@ -1,0 +1,31 @@
+apiVersion: spire.spiffe.io/v1alpha1
+kind: ClusterFederatedTrustDomain
+metadata:
+  name: google
+spec:
+  trustDomain: google.com
+  bundleEndpointURL: https://google-cluster-worker:30007
+  bundleEndpointProfile:
+    type: https_spiffe
+    endpointSPIFFEID: spiffe://google.com/spire/server
+  trustDomainBundle: |-
+    {
+        "keys": [
+            {
+                "use": "x509-svid",
+                "kty": "RSA",
+                "n": "w1NDvoPxjYIhGjn9s8SDbr_msQZSzNvhdH5vTYkhRFTSNWG35QF47Uh7EQkMGlVEx7XMNCmLA3srf3lslcY1I_i1ykZVg2JbzbTa8aJXXbBACPo2BxijkyvqNi0z9w4PswrLorgJQXvIt1VS30h-OrA1cZfbv6EYjHreerZqGM8Mvv30HObkDs_l-9Gknlyb9ruW2VLqIQ92ym0yoVpJ8YmxrnTHGjMYlbDVsOEYP_MSBzx_FMbDbyEUXx8KX_J23quztdVNO2vAG6FVy8gU3iydBiBmMVt5DwtsLh3OWhDvmJdPgpm_CqdT09ZDKt8YJI4483ybw2jkeMmjgEiyeQ",
+                "e": "AQAB",
+                "x5c": [
+                    "MIIDVDCCAjygAwIBAgIQH0oPC5zu+xPJLw1xVtSVSzANBgkqhkiG9w0BAQsFADA0MQswCQYDVQQGEwJOTDEQMA4GA1UEChMHRXhhbXBsZTETMBEGA1UEAxMKZ29vZ2xlLmNvbTAeFw0yMzA1MjMxNjI5NDZaFw0yMzA1MjQxNjI5NTZaMDQxCzAJBgNVBAYTAk5MMRAwDgYDVQQKEwdFeGFtcGxlMRMwEQYDVQQDEwpnb29nbGUuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw1NDvoPxjYIhGjn9s8SDbr/msQZSzNvhdH5vTYkhRFTSNWG35QF47Uh7EQkMGlVEx7XMNCmLA3srf3lslcY1I/i1ykZVg2JbzbTa8aJXXbBACPo2BxijkyvqNi0z9w4PswrLorgJQXvIt1VS30h+OrA1cZfbv6EYjHreerZqGM8Mvv30HObkDs/l+9Gknlyb9ruW2VLqIQ92ym0yoVpJ8YmxrnTHGjMYlbDVsOEYP/MSBzx/FMbDbyEUXx8KX/J23quztdVNO2vAG6FVy8gU3iydBiBmMVt5DwtsLh3OWhDvmJdPgpm/CqdT09ZDKt8YJI4483ybw2jkeMmjgEiyeQIDAQABo2IwYDAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUHNkeK1roOxoevpVbN1CgbeaQAnAwHgYDVR0RBBcwFYYTc3BpZmZlOi8vZ29vZ2xlLmNvbTANBgkqhkiG9w0BAQsFAAOCAQEAgPv+2a4o6ClWBXOIvosUP3zQmzCQ6qn/+X7JyoEyDkYYmB30D2ElfbUrr30tPYhgqiij9lIyrMQVhKdg4p3stJOLsqRMWhinjcLYXu3CzXv8H2vZiPOgFIDJTTgit8myTKmF+/U6Rvk/h+I3xNrMfGWjVDkCeWOOVweguHVoIKSfVxLHI3ezgRJVsEDOu0uqAEVnewHSS6uH4DS5cEP0dxRFCOUJt5kIQeK6ZTw6yx7MZPrylWdXHd7WrHcYxb8agWKUoiobynPIGFGCOqb1QvNA6+EtWruhBCtp/wbHSNz4OzXclkmRbUW7oXlKgPqBJ2LvNIU4JseLx8hzInyu8g=="
+                ]
+            },
+            {
+                "use": "jwt-svid",
+                "kty": "RSA",
+                "kid": "u8nmnL5IIGWHQKTLrqUAKUlRrz1mfxto",
+                "n": "yq4Al9NsFSvoAK3yVxoGvi1cBxWOM5gD-CcMd-7Kg79vzMRcxOVzx_9KO9mnIH6rYPAigYNRmgYovN4LcAX1jQaopWuF9BDY9a7bT6NHkLH78FOqBsGSa37y_zXYhnP-UMZ5cdzoCmY4FmLiq8FJGh1v7T3Ve7iok9KxWmfxJMcup0UN2y5p_gMo2aGhM8dU-JeVU4XvgtBPjLfy-GQEyj2HFZIvluq7rOEWlYo0-SoQnYYxQqCqbBYB2QcU8ulvp8E51yOHuCsHQEQBmvLlQLRjoMGp9HowAgA9ZJ41M1MxaDt2RTgR8sDl5-pLmgtH504BwHQkWjbKmITUi_GKjw",
+                "e": "AQAB"
+            }
+        ]
+    }

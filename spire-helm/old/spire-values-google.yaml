@@ -1,0 +1,27 @@
+global:
+  spire:
+    trustDomain: google.com
+    clusterName: google-cluster
+
+spire-server:
+  #  socketPath: "/tmp/spire-server/private/api.sock"
+  # ca_subject:
+  # common_name: google.com
+  controllerManager:
+    enabled: true
+    validatingWebhookConfiguration:
+      upgradeHook:
+        image:
+          tag: "v1.23.17"
+  federation:
+    enabled: true
+    #    federatesWith: "aws.com"
+    #    bundleEndpointUrl: "https://aws-cluster-worker:30007"
+    #    bundleEndpointProfile: "https_spiffe"
+    #    endpointSpiffeId: "spiffe://aws.com/spire/server"
+
+    #pire-agent:
+    # socketPath: "/run/secrets/workload-spiffe-uds/socket"
+    #
+    #piffe-csi-driver:
+    # agentSocketPath: "/run/secrets/workload-spiffe-uds/socket"

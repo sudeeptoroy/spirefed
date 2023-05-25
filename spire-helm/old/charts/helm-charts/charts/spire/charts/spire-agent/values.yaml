@@ -1,0 +1,127 @@
+# Default values for spire-agent.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+image:
+  # -- The OCI registry to pull the image from
+  registry: ghcr.io
+  # -- The repository within the registry
+  repository: spiffe/spire-agent
+  # -- The image pull policy
+  pullPolicy: IfNotPresent
+  # -- This value is deprecated in favor of tag. (Will be removed in a future release)
+  version: ""
+  # -- Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+namespaceOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+configMap:
+  # -- Annotations to add to the SPIRE Agent ConfigMap
+  annotations: {}
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # requests:
+  #   cpu: 50m
+  #   memory: 64Mi
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+# -- The log level, valid values are "debug", "info", "warn", and "error"
+logLevel: info
+# -- The name of the Kubernetes cluster (`kubeadm init --service-dns-domain`)
+clusterName: example-cluster
+# -- The trust domain to be used for the SPIFFE identifiers
+trustDomain: example.org
+# -- If set, obtain trust bundle from url instead of Kubernetes ConfigMap
+trustBundleURL: ""
+# -- If using trustBundleURL, what format is the url. Choices are "pem" and "spiffe"
+trustBundleFormat: pem
+bundleConfigMap: spire-bundle
+
+server:
+  address: ""
+  port: 8081
+  namespaceOverride: ""
+
+healthChecks:
+  # -- override the host port used for health checking
+  port: 9980
+
+waitForIt:
+  image:
+    # -- The OCI registry to pull the image from
+    registry: cgr.dev
+    # -- The repository within the registry
+    repository: chainguard/wait-for-it
+    # -- The image pull policy
+    pullPolicy: IfNotPresent
+    # -- This value is deprecated in favor of tag. (Will be removed in a future release)
+    version: ""
+    # -- Overrides the image tag
+    tag: latest-20230517
+  resources: {}
+
+# workloadAttestors determine a workload's properties and then generate a set of selectors associated with it.
+workloadAttestors:
+  # unix is a workload attestor which generates unix-based selectors like 'uid' and 'gid'.
+  unix:
+    # -- enables the Unix workload attestor
+    enabled: false
+  k8s:
+    # -- If true, kubelet certificate verification is skipped
+    skipKubeletVerification: true
+
+telemetry:
+  prometheus:
+    enabled: false
+    port: 9988
+    podMonitor:
+      enabled: false
+      # -- Override where to install the podMonitor, if not set will use the same namespace as the spire-agent
+      namespace: ""
+      labels: {}
+
+# -- The unix socket path to the spire-agent
+socketPath: /run/spire/agent-sockets/spire-agent.sock
+
+# -- Priority class assigned to daemonset pods
+priorityClassName: ""
+
+extraVolumes: []
+extraVolumeMounts: []
+extraContainers: []
+
+initContainers: []

@@ -1,0 +1,14 @@
+global:
+  spire:
+    trustDomain: google.com
+    clusterName: google-cluster
+
+spire-server:
+  controllerManager:
+    enabled: true
+    validatingWebhookConfiguration:
+      upgradeHook:
+        image:
+          tag: "v1.23.17"
+  federation:
+    enabled: true

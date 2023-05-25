@@ -1,0 +1,141 @@
+##### spire installation  #####
+
+* https://github.com/spiffe/helm-charts
+* helm repo add spiffe https://spiffe.github.io/helm-charts/
+* helm repo update
+
+* kubectl config use-context ${CTX_CLUSTER1}
+* kubectl create ns istio-system
+* helm install spire-aws charts/helm-charts/charts/spire/ --namespace spire --create-namespace -f spire-values-aws.yaml
+helm install spire-aws spiffe/spire --namespace spire --create-namespace -f spire-values-aws.yaml
+kubectl -n spire apply -f nodePort-aws.yaml
+
+aws_bundle=$(kubectl exec --stdin spire-aws-server-0 -c spire-server -n spire  -- /opt/spire/bin/spire-server bundle show -format spiffe -socketPath "/tmp/spire-server/private/api.sock")
+
+
+kubectl config use-context ${CTX_CLUSTER2}
+kubectl create ns istio-system
+helm install spire-google charts/helm-charts/charts/spire/ --namespace spire --create-namespace -f spire-values-google.yaml
+
+helm install spire-google spiffe/spire --namespace spire --create-namespace -f spire-values-google.yaml
+
+kubectl -n spire apply -f nodePort-google.yaml
+
+aws_b="$aws_bundle" \
+yq eval -n '{
+    "apiVersion": "spire.spiffe.io/v1alpha1",
+    "kind": "ClusterFederatedTrustDomain",
+    "metadata": {
+        "name": "aws"
+    },
+    "spec": {
+        "trustDomain": "aws.com",
+        "bundleEndpointURL": "https://aws-cluster-worker:30007",
+        "bundleEndpointProfile": {
+            "type": "https_spiffe",
+            "endpointSPIFFEID": "spiffe://aws.com/spire/server"
+        },
+        "trustDomainBundle": strenv(aws_b)
+    }
+}' > federation-google.yaml
+
+
+kubectl -n spire apply -f federation-google.yaml
+
+google_bundle=$(kubectl exec --stdin spire-google-server-0 -c spire-server -n spire  --  /opt/spire/bin/spire-server bundle show -format spiffe -socketPath "/tmp/spire-server/private/api.sock")
+
+
+
+kubectl exec --stdin spire-google-server-0 -c spire-server -n spire -- /opt/spire/bin/spire-server  bundle set -format spiffe -id spiffe://aws.com -socketPath /tmp/spire-server/private/api.sock <<< "$aws_bundle"
+
+kubectl exec --stdin spire-google-server-0 -c spire-server -n spire  --  /opt/spire/bin/spire-server entry show -socketPath "/tmp/spire-server/private/api.sock"
+
+
+### move to cluster 1
+kubectl config use-context ${CTX_CLUSTER1}
+
+# Set domain.test bundle to example.org SPIRE bundle endpoint
+kubectl exec --stdin spire-aws-server-0 -c spire-server -n spire -- /opt/spire/bin/spire-server  bundle set -format spiffe -id spiffe://google.com -socketPath /tmp/spire-server/private/api.sock <<< "$google_bundle"
+
+google_b="$google_bundle" \
+yq eval -n '{
+    "apiVersion": "spire.spiffe.io/v1alpha1",
+    "kind": "ClusterFederatedTrustDomain",
+    "metadata": {
+        "name": "google"
+    },
+    "spec": {
+        "trustDomain": "google.com",
+        "bundleEndpointURL": "https://google-cluster-worker:30007",
+        "bundleEndpointProfile": {
+            "type": "https_spiffe",
+            "endpointSPIFFEID": "spiffe://google.com/spire/server"
+        },
+        "trustDomainBundle": strenv(google_b)
+    }
+}' > federation-aws.yaml
+
+kubectl -n spire apply -f federation-aws.yaml
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+####################################
+
+cd spire-applciation
+
+(cd greeter; make docker-build)
+
+KIND_CLUSTER_NAME=aws-cluster kind load docker-image greeter-server:demo
+KIND_CLUSTER_NAME=google-cluster kind load docker-image greeter-client:demo
+
+kubectl config use-context ${CTX_CLUSTER1}
+kubectl create ns greeter-server
+kubectl -n greeter-server apply -k config/cluster1/greeter-server
+
+GREETER_IP_PORT=$(./scripts/get_service_ip_port.sh greeter-server greeter-server)
+
+
+kubectl config use-context ${CTX_CLUSTER2}
+
+kubectl create ns greeter-client
+
+kubectl -n greeter-client apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: greeter-client-config
+data:
+  greeter-server-addr: "$GREETER_IP_PORT"
+EOF
+
+
+kubectl -n greeter-client apply -k config/cluster2/greeter-client
+
+
+
+kubectl config use-context ${CTX_CLUSTER1}
+kubectl -n greeter-server apply -f config/greeter-server-id.yaml
+
+kubectl config use-context ${CTX_CLUSTER2}
+kubectl -n greeter-client apply -f config/greeter-client-id.yaml
+

@@ -18,6 +18,11 @@ kubectl label --context="${CTX_CLUSTER2}" namespace sleep \
 kubectl label --context="${CTX_CLUSTER2}" namespace helloworld \
     istio-injection=enabled
 
+kubectl -n sleep  --context="${CTX_CLUSTER1}" apply -f helloworld/sleep-aws-spiffeid.yaml
+kubectl -n sleep  --context="${CTX_CLUSTER2}" apply -f helloworld/sleep-google-spiffeid.yaml
+kubectl -n helloworld  --context="${CTX_CLUSTER1}" apply -f helloworld/helloworld-aws-spiffeid.yaml
+kubectl -n helloworld  --context="${CTX_CLUSTER2}" apply -f helloworld/helloworld-google-spiffeid.yaml
+
 kubectl apply --context="${CTX_CLUSTER1}" \
     -f helloworld/helloworld-aws.yaml \
     -l service=helloworld -n helloworld
@@ -48,6 +53,7 @@ kubectl -n sleep get pod --context="${CTX_CLUSTER1}" -l app=sleep
 
 kubectl -n sleep  --context="${CTX_CLUSTER2}" rollout status deploy sleep
 kubectl -n sleep get pod --context="${CTX_CLUSTER2}" -l app=sleep
+
 
 #### testing now
 echo "###############################################################"

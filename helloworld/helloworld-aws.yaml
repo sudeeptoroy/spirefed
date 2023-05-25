@@ -35,9 +35,9 @@ spec:
       labels:
         app: helloworld
         version: v1
+        spire.spiffe.io/spiffeid: helloworld
       annotations:
         inject.istio.io/templates: "sidecar,spire"
-        spiffe.io/federatesWith: "google.com"
     spec:
       serviceAccountName: helloworld
       containers:
